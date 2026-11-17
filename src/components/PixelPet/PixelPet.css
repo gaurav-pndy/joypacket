@@ -1,0 +1,512 @@
+/* ------------------------------------------------------------------ *
+ *  Pixel Pet
+ *
+ *  Layering (all position: fixed, bottom to top):
+ *    z      .jp-pixel-pet--back    tail, body, head  (+ the click target)
+ *    z + 1  .jp-pixel-pet-edge     the ledge: opaque, so it hides the body
+ *    z + 2  .jp-pixel-pet--front   paws + speech bubble, resting on the lip
+ *
+ *  Customisable from the host page:
+ *    --jp-pet-z            base z-index            (default 1000)
+ *    --jp-pet-ledge-size   ledge thickness         (default 5px; see ledgeSize prop)
+ *    --jp-pet-ledge-color  ledge colour (also settable via the ledgeColor prop)
+ * ------------------------------------------------------------------ */
+
+.jp-pixel-pet {
+  --jp-pet-size: 100px;
+  --jp-pet-offset: 24px;
+  /* Rendered size (smaller on phones). */
+  --jp-pet-render: var(--jp-pet-size);
+  /* Distance from the viewport edge to the art's bottom. The art is drawn so
+     its ledge line is 4/120 of its height above its bottom, which makes the
+     paws hang a few pixels over the lip. */
+  --jp-pet-inset: calc(
+    var(--jp-pet-ledge-size, 5px) - var(--jp-pet-render) / 30
+  );
+
+  position: fixed;
+  width: var(--jp-pet-render);
+  height: var(--jp-pet-render);
+  pointer-events: none;
+  font-family: system-ui, sans-serif;
+  overflow: visible;
+}
+
+.jp-pixel-pet--back {
+  z-index: var(--jp-pet-z, 1000);
+}
+.jp-pixel-pet--front {
+  z-index: calc(var(--jp-pet-z, 1000) + 2);
+}
+
+/* Offset moves the pet along its edge; the inset keeps it on the ledge. */
+.jp-pixel-pet--bottom-left {
+  left: var(--jp-pet-offset);
+  bottom: var(--jp-pet-inset);
+}
+.jp-pixel-pet--bottom-center {
+  left: 50%;
+  bottom: var(--jp-pet-inset);
+  transform: translateX(-50%);
+}
+.jp-pixel-pet--bottom-right {
+  right: var(--jp-pet-offset);
+  bottom: var(--jp-pet-inset);
+}
+
+.jp-pixel-pet--top-left {
+  left: var(--jp-pet-offset);
+  top: var(--jp-pet-inset);
+}
+.jp-pixel-pet--top-center {
+  left: 50%;
+  top: var(--jp-pet-inset);
+  transform: translateX(-50%);
+}
+.jp-pixel-pet--top-right {
+  right: var(--jp-pet-offset);
+  top: var(--jp-pet-inset);
+}
+
+.jp-pixel-pet--left-top {
+  left: var(--jp-pet-inset);
+  top: var(--jp-pet-offset);
+}
+.jp-pixel-pet--left-center {
+  left: var(--jp-pet-inset);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.jp-pixel-pet--left-bottom {
+  left: var(--jp-pet-inset);
+  bottom: var(--jp-pet-offset);
+}
+
+.jp-pixel-pet--right-top {
+  right: var(--jp-pet-inset);
+  top: var(--jp-pet-offset);
+}
+.jp-pixel-pet--right-center {
+  right: var(--jp-pet-inset);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.jp-pixel-pet--right-bottom {
+  right: var(--jp-pet-inset);
+  bottom: var(--jp-pet-offset);
+}
+
+/* The button only covers the pet's head (set per pet through --jp-hit-*,
+   as percentages of the canvas). The art is rotated for non-bottom edges, so
+   the box is mapped the same way. */
+.jp-pixel-pet__button {
+  position: absolute;
+  left: var(--jp-hit-x);
+  top: var(--jp-hit-y);
+  width: var(--jp-hit-w);
+  height: var(--jp-hit-h);
+  display: block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jp-pixel-pet--top-left .jp-pixel-pet__button,
+.jp-pixel-pet--top-center .jp-pixel-pet__button,
+.jp-pixel-pet--top-right .jp-pixel-pet__button {
+  top: calc(100% - var(--jp-hit-y) - var(--jp-hit-h));
+}
+
+.jp-pixel-pet--left-top .jp-pixel-pet__button,
+.jp-pixel-pet--left-center .jp-pixel-pet__button,
+.jp-pixel-pet--left-bottom .jp-pixel-pet__button {
+  left: calc(100% - var(--jp-hit-y) - var(--jp-hit-h));
+  top: var(--jp-hit-x);
+  width: var(--jp-hit-h);
+  height: var(--jp-hit-w);
+}
+
+.jp-pixel-pet--right-top .jp-pixel-pet__button,
+.jp-pixel-pet--right-center .jp-pixel-pet__button,
+.jp-pixel-pet--right-bottom .jp-pixel-pet__button {
+  left: var(--jp-hit-y);
+  top: calc(100% - var(--jp-hit-x) - var(--jp-hit-w));
+  width: var(--jp-hit-h);
+  height: var(--jp-hit-w);
+}
+
+.jp-pixel-pet__button:focus-visible {
+  outline: 2px solid #a6b4ff;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.jp-pet-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  image-rendering: pixelated;
+  transform-origin: center;
+}
+
+/* Soft shadow so the cat lifts off busy page backgrounds. */
+.jp-pet-art--back {
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 24%));
+}
+
+/* Orientation: rotate the complete character, never the message. */
+.jp-pixel-pet--top-left .jp-pet-art,
+.jp-pixel-pet--top-center .jp-pet-art,
+.jp-pixel-pet--top-right .jp-pet-art {
+  transform: rotate(180deg);
+}
+
+.jp-pixel-pet--left-top .jp-pet-art,
+.jp-pixel-pet--left-center .jp-pet-art,
+.jp-pixel-pet--left-bottom .jp-pet-art {
+  transform: rotate(90deg);
+}
+
+.jp-pixel-pet--right-top .jp-pet-art,
+.jp-pixel-pet--right-center .jp-pet-art,
+.jp-pixel-pet--right-bottom .jp-pet-art {
+  transform: rotate(-90deg);
+}
+
+/* ------------------------------ Moods ------------------------------ */
+
+.jp-pet-head {
+  transition: translate 0.18s ease-out;
+}
+
+.jp-pet-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: jp-blink 5.5s ease-in-out infinite;
+}
+
+/* Idle */
+.jp-pet-art--idle .jp-pet-tail {
+  animation: jp-tail-sway 3s ease-in-out infinite;
+}
+.jp-pet-art--idle .jp-pet-paws {
+  animation: jp-paw-rest 3s ease-in-out infinite;
+}
+
+/* Curious: the cat lifts its head a little to look at you. */
+.jp-pet-art--curious .jp-pet-head {
+  translate: 0 -2px;
+}
+.jp-pet-art--curious .jp-pet-pupils {
+  animation: jp-eye-look 0.5s ease-in-out;
+}
+.jp-pet-art--curious .jp-pet-tail {
+  animation: jp-tail-sway 1.6s ease-in-out infinite;
+}
+
+/* Happy: pops up higher and bounces its paws. */
+.jp-pet-art--happy .jp-pet-head {
+  animation: jp-head-pop 0.4s ease-in-out 2;
+}
+.jp-pet-art--happy .jp-pet-paws {
+  animation: jp-paws-happy 0.4s ease-in-out 2;
+}
+.jp-pet-art--happy .jp-pet-tail {
+  animation: jp-tail-happy 0.25s ease-in-out infinite alternate;
+}
+
+/* Sleeping: slow breathing, the head settles down onto its paws. */
+.jp-pet-art--sleeping .jp-pet-head {
+  translate: 0 2px;
+  animation: jp-head-breathe 4s ease-in-out infinite;
+}
+.jp-pet-art--sleeping .jp-pet-tail {
+  animation: jp-tail-sleep 4s ease-in-out infinite;
+}
+.jp-pet-zzz {
+  animation: jp-sleep-float 2.4s ease-in-out infinite;
+}
+
+/* -------------------------- Speech bubble -------------------------- */
+
+/* Playful pixel-style bubble. It remains upright in every orientation. */
+.jp-pixel-pet__bubble {
+  --jp-bubble-gap: calc(
+    100% - var(--jp-pet-render) * var(--jp-pet-headroom, 10) / 120 + 8px
+  );
+
+  position: absolute;
+  z-index: 5;
+  width: max-content;
+  max-width: min(220px, 70vw);
+  padding: 10px 14px;
+  color: #f5f6fa;
+  background: #20283a;
+  border: 2px solid #667394;
+  border-radius: 3px;
+  font:
+    500 12px/1.5 system-ui,
+    sans-serif;
+  text-align: center;
+  box-shadow: 3px 4px 0 rgb(5 7 13 / 35%);
+  pointer-events: none;
+  animation: jp-bubble-in 0.2s ease-out;
+}
+
+.jp-pixel-pet__bubble::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #20283a;
+  border-right: 2px solid #667394;
+  border-bottom: 2px solid #667394;
+  transform: rotate(45deg);
+}
+
+/* Bottom: bubble above the pet */
+.jp-pixel-pet--bottom-left .jp-pixel-pet__bubble,
+.jp-pixel-pet--bottom-center .jp-pixel-pet__bubble,
+.jp-pixel-pet--bottom-right .jp-pixel-pet__bubble {
+  bottom: var(--jp-bubble-gap);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.jp-pixel-pet--bottom-left .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--bottom-center .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--bottom-right .jp-pixel-pet__bubble::after {
+  left: calc(50% - 5px);
+  bottom: -6px;
+}
+
+/* Top: bubble below the pet */
+.jp-pixel-pet--top-left .jp-pixel-pet__bubble,
+.jp-pixel-pet--top-center .jp-pixel-pet__bubble,
+.jp-pixel-pet--top-right .jp-pixel-pet__bubble {
+  top: var(--jp-bubble-gap);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.jp-pixel-pet--top-left .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--top-center .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--top-right .jp-pixel-pet__bubble::after {
+  left: calc(50% - 5px);
+  top: -6px;
+  transform: rotate(225deg);
+}
+
+/* Left: bubble to the right */
+.jp-pixel-pet--left-top .jp-pixel-pet__bubble,
+.jp-pixel-pet--left-center .jp-pixel-pet__bubble,
+.jp-pixel-pet--left-bottom .jp-pixel-pet__bubble {
+  left: var(--jp-bubble-gap);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.jp-pixel-pet--left-top .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--left-center .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--left-bottom .jp-pixel-pet__bubble::after {
+  left: -6px;
+  top: calc(50% - 5px);
+  transform: rotate(135deg);
+}
+
+/* Right: bubble to the left */
+.jp-pixel-pet--right-top .jp-pixel-pet__bubble,
+.jp-pixel-pet--right-center .jp-pixel-pet__bubble,
+.jp-pixel-pet--right-bottom .jp-pixel-pet__bubble {
+  right: var(--jp-bubble-gap);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.jp-pixel-pet--right-top .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--right-center .jp-pixel-pet__bubble::after,
+.jp-pixel-pet--right-bottom .jp-pixel-pet__bubble::after {
+  right: -6px;
+  top: calc(50% - 5px);
+  transform: rotate(315deg);
+}
+
+/* ----------------------------- Keyframes ----------------------------- */
+
+@keyframes jp-blink {
+  0%,
+  93%,
+  100% {
+    scale: 1 1;
+  }
+  96% {
+    scale: 1 0.1;
+  }
+}
+@keyframes jp-tail-sway {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: -6deg;
+  }
+}
+@keyframes jp-tail-happy {
+  from {
+    rotate: -7deg;
+  }
+  to {
+    rotate: 7deg;
+  }
+}
+@keyframes jp-tail-sleep {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: -3deg;
+  }
+}
+@keyframes jp-paw-rest {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 1px;
+  }
+}
+@keyframes jp-paws-happy {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -5px;
+  }
+}
+@keyframes jp-head-pop {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -5px;
+  }
+}
+@keyframes jp-head-breathe {
+  0%,
+  100% {
+    translate: 0 2px;
+  }
+  50% {
+    translate: 0 3px;
+  }
+}
+@keyframes jp-eye-look {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 2px 0;
+  }
+}
+@keyframes jp-sleep-float {
+  0%,
+  100% {
+    opacity: 0.75;
+    translate: 0 0;
+  }
+  50% {
+    opacity: 1;
+    translate: 1px -3px;
+  }
+}
+@keyframes jp-bubble-in {
+  from {
+    opacity: 0;
+    scale: 0.9;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .jp-pixel-pet {
+    --jp-pet-render: min(var(--jp-pet-size), 82px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jp-pet-art,
+  .jp-pet-art *,
+  .jp-pixel-pet__bubble {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  The ledge: a solid strip along each active viewport edge, rendered
+ *  by PixelPetProvider (or by PixelPet itself when used standalone).
+ *  It is opaque on purpose: the cat's body disappears behind it.
+ *  The highlighted lip always faces into the page.
+ * ------------------------------------------------------------------ */
+
+.jp-pixel-pet-edge {
+  --jp-edge-color: var(--jp-pet-ledge-color, #687386);
+  --jp-edge-lip: color-mix(in srgb, var(--jp-edge-color) 62%, #fff);
+  --jp-edge-dark: color-mix(in srgb, var(--jp-edge-color) 70%, #000);
+  --jp-edge-size: var(--jp-pet-ledge-size, 5px);
+  --jp-edge-dir: to bottom;
+
+  position: fixed;
+  z-index: calc(var(--jp-pet-z, 1000) + 1);
+  pointer-events: none;
+  background: linear-gradient(
+    var(--jp-edge-dir),
+    var(--jp-edge-lip) 0 2px,
+    var(--jp-edge-color) 2px calc(100% - 1px),
+    var(--jp-edge-dark) calc(100% - 1px) 100%
+  );
+}
+
+.jp-pixel-pet-edge--top,
+.jp-pixel-pet-edge--bottom {
+  left: 0;
+  width: 100%;
+  height: var(--jp-edge-size);
+}
+
+.jp-pixel-pet-edge--left,
+.jp-pixel-pet-edge--right {
+  top: 0;
+  height: 100%;
+  width: var(--jp-edge-size);
+}
+
+.jp-pixel-pet-edge--bottom {
+  bottom: 0;
+  --jp-edge-dir: to bottom;
+  box-shadow: 0 -1px 3px rgb(0 0 0 / 22%);
+}
+.jp-pixel-pet-edge--top {
+  top: 0;
+  --jp-edge-dir: to top;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+}
+.jp-pixel-pet-edge--left {
+  left: 0;
+  --jp-edge-dir: to left;
+  box-shadow: 1px 0 3px rgb(0 0 0 / 22%);
+}
+.jp-pixel-pet-edge--right {
+  right: 0;
+  --jp-edge-dir: to right;
+  box-shadow: -1px 0 3px rgb(0 0 0 / 22%);
+}

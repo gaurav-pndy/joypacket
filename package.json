@@ -1,0 +1,59 @@
+{
+  "name": "joypacket",
+  "version": "0.1.0",
+  "description": "Little packets of joy for the web.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./pixel-pet": {
+      "types": "./dist/pixel-pet.d.ts",
+      "import": "./dist/pixel-pet.js"
+    },
+    "./pets": {
+      "types": "./dist/pets.d.ts",
+      "import": "./dist/pets.js"
+    },
+    "./wish-star": {
+      "types": "./dist/wish-star.d.ts",
+      "import": "./dist/wish-star.js"
+    },
+    "./style.css": "./dist/joypacket.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "jsdom": "^29.1.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.8",
+    "vite-plugin-dts": "^5.1.2",
+    "vitest": "^5.1.0"
+  }
+}
