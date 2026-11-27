@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 import {
@@ -21,6 +21,26 @@ import type {
 import "./PixelPet.css";
 
 const pct = (units: number) => `${(units / PET_CANVAS) * 100}%`;
+
+// useLayoutEffect warns during server rendering, so fall back to useEffect.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+/** Keep the speech bubble this far from the viewport edge. */
+const BUBBLE_MARGIN = 10;
+
+/** Pick the bubble accent: the pet's fur, unless it is too pale to see. */
+function bubbleAccent(palette: PixelPetPalette): string {
+  const fur = String(palette.fur ?? "");
+  const hex = fur.replace("#", "");
+  if (/^[0-9a-f]{3}$/i.test(hex) || /^[0-9a-f]{6}$/i.test(hex)) {
+    const full = hex.length === 3 ? hex.replace(/./g, "$&$&") : hex;
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    if (luminance < 0.78) return fur;
+  }
+  return String(palette.accent ?? "#e8899f");
+}
 
 export function PixelPet<P extends PixelPetName = "cat">({
   pet = "cat" as P,
@@ -59,6 +79,7 @@ export function PixelPet<P extends PixelPetName = "cat">({
   const [mood, setMood] = useState<PixelPetMood>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const hovering = useRef(false);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   const edgeContext = usePixelPetEdge();
   const edgeSide = getEdgeSide(position);
   const effectiveLedgeSize =
@@ -91,6 +112,41 @@ export function PixelPet<P extends PixelPetName = "cat">({
     const timer = window.setTimeout(() => setMessage(null), messageDuration);
     return () => window.clearTimeout(timer);
   }, [message, messageDuration]);
+
+  // Keep the bubble inside the viewport. It is centred on the pet, so near a
+  // corner (or with a very long word) it would stick out; slide it back and
+  // let CSS keep the little tail pointing at the pet.
+  useIsoLayoutEffect(() => {
+    const el = bubbleRef.current;
+    const host = el?.parentElement;
+    if (!el || !host) return;
+    const alongY = position.startsWith("left") || position.startsWith("right");
+
+    const fit = () => {
+      const box = host.getBoundingClientRect();
+      const view = document.documentElement;
+      // Beside the pet there may be little horizontal room: shrink to fit.
+      if (alongY) {
+        const rect = el.getBoundingClientRect();
+        const room = position.startsWith("left")
+          ? view.clientWidth - BUBBLE_MARGIN - rect.left
+          : rect.right - BUBBLE_MARGIN;
+        el.style.maxWidth = `${Math.max(96, Math.min(240, Math.floor(room)))}px`;
+      }
+      const [start, size, limit] = alongY
+        ? [box.top + box.height / 2 - el.offsetHeight / 2, el.offsetHeight, view.clientHeight]
+        : [box.left + box.width / 2 - el.offsetWidth / 2, el.offsetWidth, view.clientWidth];
+      const shift = Math.max(
+        BUBBLE_MARGIN - start,
+        Math.min(0, limit - BUBBLE_MARGIN - (start + size)),
+      );
+      el.style.setProperty("--jp-bubble-shift", `${Math.round(shift)}px`);
+    };
+
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [message, position, size, offset]);
 
   const handleClick = () => {
     onInteract?.();
@@ -130,6 +186,7 @@ export function PixelPet<P extends PixelPetName = "cat">({
     "--jp-hit-y": pct(hitbox.y),
     "--jp-hit-w": pct(hitbox.width),
     "--jp-hit-h": pct(hitbox.height),
+    "--jp-bubble-accent": bubbleAccent(palette),
   } as CSSProperties;
 
   const layerClass = (layer: "back" | "front") =>
@@ -174,9 +231,8 @@ export function PixelPet<P extends PixelPetName = "cat">({
           aria-label={
             mood === "sleeping"
               ? `Wake up the ${definition.label}`
-              : `Interact with the ${definition.label}`
+              : `Say hello to the ${definition.label}`
           }
-          title="Say hello!"
         />
       </div>
 
@@ -189,9 +245,30 @@ export function PixelPet<P extends PixelPetName = "cat">({
         data-mood={mood}
       >
         <Art mood={mood} layer="front" palette={palette} />
+        {/* Screen readers: a live region that exists before its text changes
+            is announced reliably; the visual bubble is decorative. */}
+        <div className="jp-pixel-pet__sr" role="status" aria-live="polite">
+          {message}
+        </div>
         {message && (
-          <div className="jp-pixel-pet__bubble" role="status" aria-live="polite">
+          <div
+            ref={bubbleRef}
+            className="jp-pixel-pet__bubble"
+            aria-hidden="true"
+          >
             {message}
+            {/* Pixel-stair tail; CSS turns it towards the pet. */}
+            <svg
+              className="jp-pixel-pet__bubble-tail"
+              viewBox="0 0 18 12"
+              width="18"
+              height="12"
+              shapeRendering="crispEdges"
+              aria-hidden="true"
+            >
+              <path className="jp-bubble-tail-ink" d="M0 0H18V4H15V8H12V12H6V8H3V4H0Z" />
+              <path className="jp-bubble-tail-fill" d="M3 0H15V4H12V8H6V4H3Z" />
+            </svg>
           </div>
         )}
       </div>

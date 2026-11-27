@@ -1,11 +1,21 @@
 {
   "name": "joypacket",
   "version": "0.1.0",
-  "description": "Little packets of joy for the web.",
+  "description": "Little packets of joy for the web: a pixel pet that peeks over the edge of your page.",
   "license": "MIT",
+  "author": "Gaurav Pandey (https://github.com/gaurav-pndy)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gaurav-pndy/joypacket.git"
+  },
+  "homepage": "https://gaurav-pndy.github.io/joypacket/",
+  "bugs": {
+    "url": "https://github.com/gaurav-pndy/joypacket/issues"
+  },
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -23,10 +33,6 @@
       "types": "./dist/pets.d.ts",
       "import": "./dist/pets.js"
     },
-    "./wish-star": {
-      "types": "./dist/wish-star.d.ts",
-      "import": "./dist/wish-star.js"
-    },
     "./style.css": "./dist/joypacket.css"
   },
   "sideEffects": [
@@ -37,13 +43,18 @@
     "build": "vite build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:demo": "vite build --config vite.demo.config.ts",
+    "preview:demo": "vite preview --config vite.demo.config.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -55,5 +66,20 @@
     "vite": "^8.3.8",
     "vite-plugin-dts": "^5.1.2",
     "vitest": "^5.1.0"
+  },
+  "keywords": [
+    "react",
+    "pixel-art",
+    "pixel-pet",
+    "mascot",
+    "companion",
+    "widget",
+    "cat",
+    "dog",
+    "fun",
+    "joy"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

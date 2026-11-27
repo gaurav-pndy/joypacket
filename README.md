@@ -2,6 +2,8 @@
 
 ## Pixel Pet
 
+[Live demo](https://gaurav-pndy.github.io/joypacket/) · [Changelog](CHANGELOG.md)
+
 A small pixel pet that peeks over the edge of your page. It sleeps when idle,
 wakes up when clicked, and says something when clicked while awake.
 
@@ -10,6 +12,14 @@ import { PixelDog } from "joypacket/pets";
 
 <PixelDog variant="corgi" position="bottom-right" messages={["Hi!"]} />
 ```
+
+Install with `npm i joypacket` (React 18+). Nothing else is needed: the
+styles are injected automatically the first time a pet is imported.
+
+**Next.js / SSR:** the components are marked `"use client"` and are safe to
+render on the server, so you can use them straight from a Server Component or
+a layout. **Strict CSP?** Import `joypacket/style.css` yourself instead of
+relying on the injected `<style>` tag.
 
 Every pet has its own component in `joypacket/pets` (`PixelCat`, `PixelDog`,
 `PixelBunny`, `PixelFox`, `PixelBear`). They
@@ -64,3 +74,21 @@ recolour. Colours are only its defaults; users can tweak them with `colors`.
 Mood animations (blink, tail sway, bounce, breathing) come from CSS classes
 (`jp-pet-head`, `jp-pet-eyes`, `jp-pet-paws`, `jp-pet-tail`, ...) so a new
 pet only tags the parts it has.
+
+## Accessibility
+
+- The pet's head is a real `<button>` (keyboard focusable, Enter/Space work,
+  visible focus ring) labelled "Say hello to the pixel cat" / "Wake up the
+  pixel cat".
+- Messages are announced to screen readers through a polite live region; the
+  visual bubble itself is hidden from assistive tech so nothing is read twice.
+- `prefers-reduced-motion` turns the animations off.
+
+## Development
+
+```bash
+npm run dev        # demo page
+npm test           # vitest + Testing Library (every pet and variant is rendered)
+npm run typecheck
+npm run build
+```
